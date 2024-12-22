@@ -2,6 +2,10 @@ name: Run Benchmark
 
 on:
   workflow_dispatch:
+    inputs:
+      action_input:
+        required: false
+        type: string
 
 jobs:
   benchmark:
@@ -23,6 +27,7 @@ jobs:
         run: |
           mkdir -p ./upload
           export CURRENT_OS="${{ matrix.os }}"
+          export ACTION_INPUT="${{ inputs.action_input }} "
           chmod +x ./run.sh
           bash run.sh
 
