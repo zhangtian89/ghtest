@@ -14,6 +14,17 @@ macro_rules! encrypt_template {
     (inner: $cipher:expr, $nonce:expr, $buf:expr) => {
         $cipher.encrypt_in_place(&($nonce), ASSOCIATED, ($buf)).unwrap()
     };
+    (@block, $cipher:expr, $size:expr) => {
+        |mut x| {
+            encrypt_template!(@block, inner: $cipher, $size, &mut x);
+            x
+        }
+    };
+    (@block, inner: $cipher:expr, $size:expr, $buf:expr) => {
+        for block in $buf.chunks_exact_mut($size) {
+            $cipher.encrypt_block(block.into());
+        }
+    };
 }
 
 macro_rules! encrypt_init_template {
@@ -21,6 +32,13 @@ macro_rules! encrypt_init_template {
         |size| {
             let mut data = gen_vec(size);
             encrypt_template!(inner: $cipher, $nonce, &mut data);
+            data
+        }
+    };
+    (@block, $cipher:expr, $size:expr) => {
+        |size| {
+            let mut data = gen_vec(size);
+            encrypt_template!(@block, inner: $cipher, $size, &mut data);
             data
         }
     };
@@ -35,6 +53,17 @@ macro_rules! decrypt_template {
     };
     (inner: $cipher:expr, $nonce:expr, $buf:expr) => {
         $cipher.decrypt_in_place(&($nonce), ASSOCIATED, $buf).unwrap();
+    };
+    (@block, $cipher:expr, $size:expr) => {
+        |mut x| {
+            decrypt_template!(@block, inner: $cipher, $size, &mut x);
+            x
+        }
+    };
+    (@block, inner: $cipher:expr, $size:expr, $buf:expr) => {
+        for block in $buf.chunks_exact_mut($size) {
+            $cipher.decrypt_block(block.into());
+        }
     };
 }
 
@@ -119,6 +148,87 @@ fn bench_chacha20poly1305<M: Measurement>(group: &mut BenchmarkGroup<M>) {
     );
 }
 
+fn bench_sm4<M: Measurement>(group: &mut BenchmarkGroup<M>) {
+    use sm4::{
+        cipher::{BlockDecrypt, BlockEncrypt, KeyInit},
+        Sm4,
+    };
+
+    let key = gen_array::<16>();
+    let cipher = Sm4::new(&key.into());
+    bench_chunk(
+        group,
+        "Sm4 encrypt",
+        gen_vec,
+        encrypt_template!(@block, cipher, 16),
+    );
+    bench_chunk(
+        group,
+        "Sm4 decrypt",
+        encrypt_init_template!(@block, cipher, 16),
+        decrypt_template!(@block, cipher, 16),
+    );
+}
+
+fn bench_camellia<M: Measurement>(group: &mut BenchmarkGroup<M>) {
+    use camellia::{
+        cipher::{BlockDecrypt, BlockEncrypt, KeyInit},
+        Camellia128, Camellia256,
+    };
+
+    let key = gen_array::<16>();
+    let cipher = Camellia128::new(&key.into());
+    bench_chunk(
+        group,
+        "Camellia128 encrypt",
+        gen_vec,
+        encrypt_template!(@block, cipher, 16),
+    );
+    bench_chunk(
+        group,
+        "Camellia128 decrypt",
+        encrypt_init_template!(@block, cipher, 16),
+        decrypt_template!(@block, cipher, 16),
+    );
+
+    let key = gen_array::<32>();
+    let cipher = Camellia256::new(&key.into());
+    bench_chunk(
+        group,
+        "Camellia256 encrypt",
+        gen_vec,
+        encrypt_template!(@block, cipher, 16),
+    );
+    bench_chunk(
+        group,
+        "Camellia256 decrypt",
+        encrypt_init_template!(@block, cipher, 16),
+        decrypt_template!(@block, cipher, 16),
+    );
+}
+
+fn bench_blowfish<M: Measurement>(group: &mut BenchmarkGroup<M>) {
+    use blowfish::{
+        cipher::{BlockDecrypt, BlockEncrypt, KeyInit},
+        Blowfish, BlowfishLE,
+    };
+
+    let key = gen_array::<56>();
+    let cipher: BlowfishLE = Blowfish::new((&key).into());
+    bench_chunk(
+        group,
+        "Blowfish encrypt",
+        gen_vec,
+        encrypt_template!(@block, cipher, 8),
+    );
+    bench_chunk(
+        group,
+        "Blowfish decrypt",
+        encrypt_init_template!(@block, cipher, 8),
+        decrypt_template!(@block, cipher, 8),
+    );
+}
+
 fn bench_salsa20<M: Measurement>(group: &mut BenchmarkGroup<M>) {
     use salsa20::cipher::{KeyIvInit, StreamCipher};
     use salsa20::Salsa20;
@@ -128,63 +238,6 @@ fn bench_salsa20<M: Measurement>(group: &mut BenchmarkGroup<M>) {
     let mut cipher = Salsa20::new(&key.into(), &nonce.into());
     bench_chunk(group, "Salsa20", gen_vec, |mut x| {
         cipher.apply_keystream(&mut x);
-        x
-    });
-}
-
-fn bench_sm4<M: Measurement>(group: &mut BenchmarkGroup<M>) {
-    use sm4::{
-        cipher::{BlockEncrypt, KeyInit},
-        Sm4,
-    };
-
-    let key = gen_array::<16>();
-    let cipher = Sm4::new(&key.into());
-    bench_chunk(group, "Sm4", gen_vec, |mut x| {
-        for block in x.chunks_exact_mut(16) {
-            cipher.encrypt_block(block.into());
-        }
-        x
-    });
-}
-
-fn bench_camellia<M: Measurement>(group: &mut BenchmarkGroup<M>) {
-    use camellia::{
-        cipher::{BlockEncrypt, KeyInit},
-        Camellia128, Camellia256,
-    };
-
-    let key = gen_array::<16>();
-    let cipher = Camellia128::new(&key.into());
-    bench_chunk(group, "Camellia128", gen_vec, |mut x| {
-        for block in x.chunks_exact_mut(16) {
-            cipher.encrypt_block(block.into());
-        }
-        x
-    });
-
-    let key = gen_array::<32>();
-    let cipher = Camellia256::new(&key.into());
-    bench_chunk(group, "Camellia256", gen_vec, |mut x| {
-        for block in x.chunks_exact_mut(16) {
-            cipher.encrypt_block(block.into());
-        }
-        x
-    });
-}
-
-fn bench_blowfish<M: Measurement>(group: &mut BenchmarkGroup<M>) {
-    use blowfish::{
-        cipher::{BlockEncrypt, KeyInit},
-        Blowfish, BlowfishLE,
-    };
-
-    let key = gen_array::<56>();
-    let cipher: BlowfishLE = Blowfish::new((&key).into());
-    bench_chunk(group, "Blowfish", gen_vec, |mut x| {
-        for block in x.chunks_exact_mut(8) {
-            cipher.encrypt_block(block.into());
-        }
         x
     });
 }
