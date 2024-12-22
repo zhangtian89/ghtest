@@ -11,6 +11,9 @@ criterion = "0"
 aes-gcm = { version = "0.10.3", features = ["std"] }
 chacha20poly1305 = { version = "0.10.1", features = ["std"] }
 salsa20 = { version = "0.10.2", features = ["std"] }
+blowfish = "0.9.1"
+sm4 = "0.5.1"
+camellia = "0.1.0"
 
 [[bench]]
 name = "symmetric_encrypt"

@@ -3,6 +3,40 @@ use _utils::{bench_chunk_util::bench_chunk, *};
 
 const ASSOCIATED: &[u8] = b"ASSOCIATED data";
 
+macro_rules! encrypt_template {
+    ($cipher:expr, $nonce:expr) => {
+        |mut x| {
+            encrypt_template!(inner: $cipher, $nonce, &mut x);
+            x
+        }
+    };
+    (inner: $cipher:expr, $nonce:expr, $buf:expr) => {
+        $cipher.encrypt_in_place(&($nonce), ASSOCIATED, ($buf)).unwrap()
+    };
+}
+
+macro_rules! encrypt_init_template {
+    ($cipher:expr, $nonce:expr) => {
+        |size| {
+            let mut data = gen_vec(size);
+            encrypt_template!(inner: $cipher, $nonce, &mut data);
+            data
+        }
+    };
+}
+
+macro_rules! decrypt_template {
+    ($cipher:expr, $nonce:expr) => {
+        |mut x| {
+            decrypt_template!(inner: $cipher, $nonce, &mut x);
+            x
+        }
+    };
+    (inner: $cipher:expr, $nonce:expr, $buf:expr) => {
+        $cipher.decrypt_in_place(&($nonce), ASSOCIATED, $buf).unwrap();
+    };
+}
+
 fn bench_aes(c: &mut Criterion) {
     use aes_gcm::{
         aes::{Aes128, Aes256},
@@ -22,25 +56,13 @@ fn bench_aes(c: &mut Criterion) {
         &mut group,
         "Aes128Gcm encrypt_in_place",
         |size| gen_vec(size),
-        |mut x| {
-            cipher.encrypt_in_place(nonce, ASSOCIATED, &mut x).unwrap();
-            x
-        },
+        encrypt_template!(cipher, nonce),
     );
     bench_chunk(
         &mut group,
         "Aes128Gcm decrypt_in_place",
-        |size| {
-            let mut data = gen_vec(size);
-            cipher
-                .encrypt_in_place(nonce, ASSOCIATED, &mut data)
-                .unwrap();
-            data
-        },
-        |mut x| {
-            cipher.decrypt_in_place(nonce, ASSOCIATED, &mut x).unwrap();
-            x
-        },
+        encrypt_init_template!(cipher, nonce),
+        decrypt_template!(cipher, nonce),
     );
 
     let key: [_; 32] = gen_array();
@@ -50,25 +72,13 @@ fn bench_aes(c: &mut Criterion) {
         &mut group,
         "Aes256Gcm encrypt_in_place",
         |size| gen_vec(size),
-        |mut x| {
-            cipher.encrypt_in_place(nonce, ASSOCIATED, &mut x).unwrap();
-            x
-        },
+        encrypt_template!(cipher, nonce),
     );
     bench_chunk(
         &mut group,
         "Aes256Gcm decrypt_in_place",
-        |size| {
-            let mut data = gen_vec(size);
-            cipher
-                .encrypt_in_place(nonce, ASSOCIATED, &mut data)
-                .unwrap();
-            data
-        },
-        |mut x| {
-            cipher.decrypt_in_place(nonce, ASSOCIATED, &mut x).unwrap();
-            x
-        },
+        encrypt_init_template!(cipher, nonce),
+        decrypt_template!(cipher, nonce),
     );
 
     group.finish();
@@ -90,25 +100,13 @@ fn bench_chacha20poly1305(c: &mut Criterion) {
         &mut group,
         "ChaCha20Poly1305 encrypt_in_place",
         |size| gen_vec(size),
-        |mut x| {
-            cipher.encrypt_in_place(&nonce, ASSOCIATED, &mut x).unwrap();
-            x
-        },
+        encrypt_template!(cipher, nonce),
     );
     bench_chunk(
         &mut group,
         "ChaCha20Poly1305 decrypt_in_place",
-        |size| {
-            let mut data = gen_vec(size);
-            cipher
-                .encrypt_in_place(&nonce, ASSOCIATED, &mut data)
-                .unwrap();
-            data
-        },
-        |mut x| {
-            cipher.decrypt_in_place(&nonce, ASSOCIATED, &mut x).unwrap();
-            x
-        },
+        encrypt_init_template!(cipher, nonce),
+        decrypt_template!(cipher, nonce),
     );
 
     let key = XChaCha20Poly1305::generate_key(&mut OsRng);
@@ -118,25 +116,13 @@ fn bench_chacha20poly1305(c: &mut Criterion) {
         &mut group,
         "XChaCha20Poly1305 encrypt_in_place",
         |size| gen_vec(size),
-        |mut x| {
-            cipher.encrypt_in_place(&nonce, ASSOCIATED, &mut x).unwrap();
-            x
-        },
+        encrypt_template!(cipher, nonce),
     );
     bench_chunk(
         &mut group,
         "XChaCha20Poly1305 decrypt_in_place",
-        |size| {
-            let mut data = gen_vec(size);
-            cipher
-                .encrypt_in_place(&nonce, ASSOCIATED, &mut data)
-                .unwrap();
-            data
-        },
-        |mut x| {
-            cipher.decrypt_in_place(&nonce, ASSOCIATED, &mut x).unwrap();
-            x
-        },
+        encrypt_init_template!(cipher, nonce),
+        decrypt_template!(cipher, nonce),
     );
 
     group.finish();
@@ -158,6 +144,98 @@ fn bench_salsa20(c: &mut Criterion) {
         |size| gen_vec(size),
         |mut x| {
             cipher.apply_keystream(&mut x);
+            x
+        },
+    );
+
+    group.finish();
+}
+
+fn bench_sm4(c: &mut Criterion) {
+    use sm4::{
+        cipher::{BlockEncrypt, KeyInit},
+        Sm4,
+    };
+
+    let mut group = c.benchmark_group("Sm4");
+    group.sample_size(20);
+
+    let key = gen_array::<16>();
+    let cipher = Sm4::new(&key.into());
+    bench_chunk(
+        &mut group,
+        "Sm4",
+        |size| gen_vec(size),
+        |mut x| {
+            for block in x.chunks_exact_mut(16) {
+                cipher.encrypt_block(block.into());
+            }
+            x
+        },
+    );
+
+    group.finish();
+}
+
+fn bench_camellia(c: &mut Criterion) {
+    use camellia::{
+        cipher::{BlockEncrypt, KeyInit},
+        Camellia128, Camellia256,
+    };
+
+    let mut group = c.benchmark_group("Camellia");
+    group.sample_size(20);
+
+    let key = gen_array::<16>();
+    let cipher = Camellia128::new(&key.into());
+    bench_chunk(
+        &mut group,
+        "Camellia128",
+        |size| gen_vec(size),
+        |mut x| {
+            for block in x.chunks_exact_mut(16) {
+                cipher.encrypt_block(block.into());
+            }
+            x
+        },
+    );
+
+    let key = gen_array::<32>();
+    let cipher = Camellia256::new(&key.into());
+    bench_chunk(
+        &mut group,
+        "Camellia256",
+        |size| gen_vec(size),
+        |mut x| {
+            for block in x.chunks_exact_mut(16) {
+                cipher.encrypt_block(block.into());
+            }
+            x
+        },
+    );
+
+    group.finish();
+}
+
+fn bench_blowfish(c: &mut Criterion) {
+    use blowfish::{
+        cipher::{BlockEncrypt, KeyInit},
+        Blowfish, BlowfishLE,
+    };
+
+    let mut group = c.benchmark_group("Blowfish");
+    group.sample_size(20);
+
+    let key = gen_array::<56>();
+    let cipher: BlowfishLE = Blowfish::new((&key).into());
+    bench_chunk(
+        &mut group,
+        "Blowfish",
+        |size| gen_vec(size),
+        |mut x| {
+            for block in x.chunks_exact_mut(8) {
+                cipher.encrypt_block(block.into());
+            }
             x
         },
     );
@@ -192,6 +270,9 @@ criterion_group!(
     bench_xor,
     bench_salsa20,
     bench_chacha20poly1305,
-    bench_aes
+    bench_aes,
+    bench_blowfish,
+    bench_camellia,
+    bench_sm4,
 );
 criterion_main!(benches);
