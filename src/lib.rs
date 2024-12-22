@@ -19,5 +19,5 @@ pub fn gen_array<const N: usize>() -> [u8; N] {
 pub fn action_input() -> Option<String> {
     std::env::var_os("ACTION_INPUT")
         .map(|x| x.to_string_lossy().into_owned())
-        .filter(|x| !x.is_empty())
+        .filter(|x| !x.trim().is_empty())
 }
