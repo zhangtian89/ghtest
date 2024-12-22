@@ -1,14 +1,12 @@
 mod _utils;
 use _utils::{bench_chunk_util::bench_chunk, *};
+use criterion::BenchmarkGroup;
 
-fn bench_xor(c: &mut Criterion) {
+fn bench_xor<M: criterion::measurement::Measurement>(group: &mut BenchmarkGroup<M>) {
     use std::ops::BitXorAssign;
 
-    let mut group = c.benchmark_group("XOR");
-    group.sample_size(20);
-
     bench_chunk(
-        &mut group,
+        group,
         "xor",
         |size| (gen_vec(size), [0u8; 32]),
         |(data, mut buf)| {
@@ -18,8 +16,6 @@ fn bench_xor(c: &mut Criterion) {
             buf
         },
     );
-
-    group.finish();
 }
 
 macro_rules! init_template {
@@ -50,73 +46,50 @@ macro_rules! bench_template {
     };
 }
 
-fn bench_sha2(c: &mut Criterion) {
+fn bench_sha2<M: criterion::measurement::Measurement>(group: &mut BenchmarkGroup<M>) {
     use sha2::{Digest, Sha256, Sha512};
 
-    let mut group = c.benchmark_group("Sha2");
-    group.sample_size(20);
-
-    bench_chunk(
-        &mut group,
-        "Sha256",
-        init_template!(Sha256),
-        bench_template!(),
-    );
-    bench_chunk(
-        &mut group,
-        "Sha512",
-        init_template!(Sha512),
-        bench_template!(),
-    );
-
-    group.finish();
+    bench_chunk(group, "Sha256", init_template!(Sha256), bench_template!());
+    bench_chunk(group, "Sha512", init_template!(Sha512), bench_template!());
 }
 
-fn bench_sha3(c: &mut Criterion) {
+fn bench_sha3<M: criterion::measurement::Measurement>(group: &mut BenchmarkGroup<M>) {
     use sha3::{Digest, Sha3_256, Sha3_512};
 
-    let mut group = c.benchmark_group("Sha3");
-    group.sample_size(20);
-
     bench_chunk(
-        &mut group,
+        group,
         "Sha3_256",
         init_template!(Sha3_256),
         bench_template!(),
     );
     bench_chunk(
-        &mut group,
+        group,
         "Sha3_512",
         init_template!(Sha3_512),
         bench_template!(),
     );
-
-    group.finish();
 }
 
-fn bench_hmac(c: &mut Criterion) {
+fn bench_hmac<M: criterion::measurement::Measurement>(group: &mut BenchmarkGroup<M>) {
     use hmac::{Hmac, Mac};
     use sha2::{Sha256, Sha512};
 
-    let mut group = c.benchmark_group("Hmac");
-    group.sample_size(20);
-
     let key: [_; 32] = gen_array();
     bench_chunk(
-        &mut group,
+        group,
         "Hmac<Sha256> hash",
         init_template!(Hmac<Sha256>, Hmac::new_from_slice(&key).unwrap()),
         bench_template!(x, x.into_bytes()),
     );
     bench_chunk(
-        &mut group,
+        group,
         "Hmac<Sha512> hash",
         init_template!(Hmac<Sha512>, Hmac::new_from_slice(&key).unwrap()),
         bench_template!(x, x.into_bytes()),
     );
 
     bench_chunk(
-        &mut group,
+        group,
         "Hmac<Sha256> verify",
         |size| {
             let data = gen_vec(size);
@@ -133,105 +106,81 @@ fn bench_hmac(c: &mut Criterion) {
         },
     );
     bench_chunk(
-        &mut group,
+        group,
         "Hmac<Sha512> verify",
         init_template!(Hmac<Sha512>, Hmac::new_from_slice(&key).unwrap()),
         bench_template!(x, x.into_bytes()),
     );
-
-    group.finish();
 }
 
-fn bench_whirlpool(c: &mut Criterion) {
+fn bench_whirlpool<M: criterion::measurement::Measurement>(group: &mut BenchmarkGroup<M>) {
     use whirlpool::{Digest, Whirlpool};
 
-    let mut group = c.benchmark_group("Whirlpool");
-    group.sample_size(20);
-
     bench_chunk(
-        &mut group,
+        group,
         "Whirlpool",
         init_template!(Whirlpool),
         bench_template!(),
     );
-
-    group.finish();
 }
 
-fn bench_sm3(c: &mut Criterion) {
+fn bench_sm3<M: criterion::measurement::Measurement>(group: &mut BenchmarkGroup<M>) {
     use sm3::{Digest, Sm3};
 
-    let mut group = c.benchmark_group("Sm3");
-    group.sample_size(20);
-
-    bench_chunk(&mut group, "Sm3", init_template!(Sm3), bench_template!());
-
-    group.finish();
+    // let mut group = c.benchmark_group("Sm3");
+    bench_chunk(group, "Sm3", init_template!(Sm3), bench_template!());
 }
 
-fn bench_blake2(c: &mut Criterion) {
+fn bench_blake2<M: criterion::measurement::Measurement>(group: &mut BenchmarkGroup<M>) {
     use blake2::{digest::Digest, Blake2b512, Blake2s256};
 
-    let mut group = c.benchmark_group("Blake2b");
-    group.sample_size(20);
-
+    // let mut group = c.benchmark_group("Blake2b");
     bench_chunk(
-        &mut group,
+        group,
         "Blake2s256",
         init_template!(Blake2s256),
         bench_template!(),
     );
     bench_chunk(
-        &mut group,
+        group,
         "Blake2b512",
         init_template!(Blake2b512),
         bench_template!(),
     );
-
-    group.finish();
 }
 
-fn bench_blake2s_simd(c: &mut Criterion) {
-    let mut group = c.benchmark_group("blake2s_simd");
-    group.sample_size(20);
-
-    bench_chunk(
-        &mut group,
-        "blake2s",
-        |s| gen_vec(s),
-        |x| blake2s_simd::blake2s(x.as_slice()),
-    );
-    bench_chunk(
-        &mut group,
-        "blake2sp",
-        |s| gen_vec(s),
-        |x| blake2s_simd::blake2sp::blake2sp(x.as_slice()),
-    );
-
-    group.finish();
+fn bench_blake2s_simd<M: criterion::measurement::Measurement>(group: &mut BenchmarkGroup<M>) {
+    bench_chunk(group, "blake2s_simd", gen_vec, |x| {
+        blake2s_simd::blake2s(x.as_slice())
+    });
+    bench_chunk(group, "blake2sp_simd", gen_vec, |x| {
+        blake2s_simd::blake2sp::blake2sp(x.as_slice())
+    });
 }
 
-fn bench_blake3(c: &mut Criterion) {
+fn bench_blake3<M: criterion::measurement::Measurement>(group: &mut BenchmarkGroup<M>) {
     use blake3::hash;
+    bench_chunk(group, "Blake3", gen_vec, |x| hash(x.as_slice()));
+}
 
-    let mut group = c.benchmark_group("Blake3");
-    group.sample_size(20);
-
-    bench_chunk(&mut group, "Blake3", |s| gen_vec(s), |x| hash(x.as_slice()));
-
+fn benching(c: &mut Criterion) {
+    let mut group = c.benchmark_group("Hash");
+    let funcs = [
+        bench_xor,
+        bench_whirlpool,
+        bench_sha2,
+        bench_sha3,
+        bench_hmac,
+        bench_sm3,
+        bench_blake2,
+        bench_blake3,
+        bench_blake2s_simd,
+    ];
+    for f in funcs {
+        f(&mut group)
+    }
     group.finish();
 }
 
-criterion_group!(
-    benches,
-    bench_xor,
-    bench_whirlpool,
-    bench_sha2,
-    bench_sha3,
-    bench_hmac,
-    bench_sm3,
-    bench_blake2,
-    bench_blake3,
-    bench_blake2s_simd,
-);
+criterion_group!(benches, benching);
 criterion_main!(benches);
