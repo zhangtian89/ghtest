@@ -10,6 +10,13 @@ on:
       action_input:
         required: false
         type: string
+      reuse_result:
+        default: 'off'
+        type: choice
+        options: 
+          - off
+          - per_branch
+          - per_os
 
 env:
   REPO_OWNER: ${{ github.repository_owner }}
@@ -38,10 +45,12 @@ jobs:
 
       - name: Run benchmark script
         shell: bash
+        env:
+          CURRENT_OS: "${{ matrix.os }}"
+          ACTION_INPUT: "${{ inputs.action_input }}"
+          REUSE_RESULT: "${{ inputs.reuse_result }}"
         run: |
           mkdir -p ./upload
-          export CURRENT_OS="${{ matrix.os }}"
-          export ACTION_INPUT="${{ inputs.action_input }} "
           chmod +x ./run.sh
           bash run.sh
 
