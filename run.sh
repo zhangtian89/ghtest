@@ -4,15 +4,17 @@ set -e
 mkdir -p "./target"
 DOWNLOADED=true
 URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${RELEASE_TAG}/criterion-result-${CURRENT_OS}.zip"
+BRANCH="$(echo "benches/symmetric_encrypt.rs\n" | sed 's/[]:<>|?"*+\/\\[]|\s*$/_/g')"
+ACHIEVE_NAME="criterion-result-${CURRENT_OS}-${BRANCH}"
 echo Download last result from $URL
 curl -fL \
-    -o "./target/criterion-result-${CURRENT_OS}.zip" \
+    -o "./target/$ACHIEVE_NAME.zip" \
     "$URL" \
     || DOWNLOADED=false
 if [[ "$DOWNLOADED" == "true" ]]; then
     cd ./target
-    unzip criterion-result-${CURRENT_OS}.zip
-    mv criterion-result-${CURRENT_OS} criterion
+    unzip $ACHIEVE_NAME.zip
+    mv $ACHIEVE_NAME criterion
     echo Downloaded last result
 else
     echo No result downloaded
@@ -21,5 +23,5 @@ fi
 cargo bench || exit 1
 
 if ! [ -z "$(ls -A ./target/criterion 2>> /dev/null)" ]; then
-    mv ./target/criterion ./upload/criterion-result-$CURRENT_OS
+    mv ./target/criterion ./upload/$ACHIEVE_NAME
 fi
