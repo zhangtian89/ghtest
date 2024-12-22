@@ -8,6 +8,10 @@ rand = { version = "0.8.5", features = ["serde"] }
 [dev-dependencies]
 criterion = "0"
 
+aes-gcm = { version = "0.10.3", features = ["std"] }
+chacha20poly1305 = { version = "0.10.1", features = ["std"] }
+salsa20 = { version = "0.10.2", features = ["std"] }
+
 [[bench]]
-name = "_template"
+name = "symmetric_encrypt"
 harness = false
