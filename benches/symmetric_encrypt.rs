@@ -241,13 +241,13 @@ fn bench_twofish<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         group,
         "Twofish encrypt",
         gen_vec,
-        encrypt_template!(@block, cipher, 32),
+        encrypt_template!(@block, cipher, 16),
     );
     bench_chunk(
         group,
         "Twofish decrypt",
-        encrypt_init_template!(@block, cipher, 32),
-        decrypt_template!(@block, cipher, 32),
+        encrypt_init_template!(@block, cipher, 16),
+        decrypt_template!(@block, cipher, 16),
     );
 }
 
@@ -278,6 +278,7 @@ fn bench_xor<M: Measurement>(group: &mut BenchmarkGroup<M>) {
 
 fn benching(c: &mut Criterion) {
     let funcs = [
+        bench_twofish,
         bench_xor,
         bench_salsa20,
         bench_chacha20poly1305,
@@ -285,7 +286,6 @@ fn benching(c: &mut Criterion) {
         bench_blowfish,
         bench_camellia,
         bench_sm4,
-        bench_twofish,
     ];
     let mut group = c.benchmark_group("Symmetric Encrypt");
     for func in funcs {
