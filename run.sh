@@ -4,7 +4,7 @@ set -e
 mkdir -p "./target"
 DOWNLOADED=true
 URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${RELEASE_TAG}/criterion-result-${CURRENT_OS}.zip"
-BRANCH="$(echo "benches/symmetric_encrypt.rs\n" | sed 's/[]:<>|?"*+\/\\[]|\s*$/_/g')"
+BRANCH="$(echo "$(git branch --show-current)" | sed 's/[]:<>|?"*+\/\\[]/_/g')"
 ACHIEVE_NAME="criterion-result-${CURRENT_OS}-${BRANCH}"
 echo Download last result from $URL
 curl -fL \
