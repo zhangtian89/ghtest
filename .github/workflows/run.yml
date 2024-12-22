@@ -1,11 +1,19 @@
 name: Run Benchmark
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
     inputs:
       action_input:
         required: false
         type: string
+
+env:
+  REPO_OWNER: ${{ github.repository_owner }}
+  REPO_NAME: ${{ github.event.repository.name }}
+  RELEASE_TAG: "BenchmarkResult"
 
 jobs:
   benchmark:
@@ -59,3 +67,18 @@ jobs:
           name: benchmark result
           path: ./target/@artifacts/*.zip
           retention-days: 1
+
+      - name: Upload Release Assets
+        if: steps.pack_result.outputs.need_upload == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd ./target/@artifacts/
+          for file in *; do
+            echo "Uploading $file"
+            curl -XPOST \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Content-Type: $(file -b --mime-type $file)" \
+              --data-binary @$file \
+              "https://uploads.github.com/repos/${{ env.REPO_OWNER }}/${{ env.REPO_NAME }}/releases/tags/${{ env.RELEASE_TAG }}/assets?name=$(basename $file)"
+          done
