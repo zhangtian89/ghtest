@@ -82,7 +82,7 @@ jobs:
         if: steps.pack_result.outputs.need_upload == 'true'
         uses: actions/upload-artifact@v3
         with:
-          name: benchmark result
+          name: benchmark result on ${{ matrix.os }}
           path: ./target/@artifacts/*.zip
           retention-days: 1
 
