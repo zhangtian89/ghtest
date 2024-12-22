@@ -13,8 +13,10 @@ curl -fL \
     || DOWNLOADED=false
 if [[ "$DOWNLOADED" == "true" ]]; then
     cd ./target
+    rm -r criterion || _A=1
     unzip $ACHIEVE_NAME.zip
     mv $ACHIEVE_NAME criterion
+    cd ..
     echo Downloaded last result
 else
     echo No result downloaded
