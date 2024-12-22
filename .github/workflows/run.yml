@@ -14,7 +14,7 @@ on:
         default: 'off'
         type: choice
         options: 
-          - off
+          - 'off'
           - per_branch
           - per_os
 
