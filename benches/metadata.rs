@@ -60,6 +60,8 @@ fn ignore<T>(x: T) {
 }
 
 fn bench_metadata(c: &mut Criterion) {
+    let mut group = c.benchmark_group("Metadata");
+
     let test_dir = "./target/test_dir_metadata";
 
     if fs::remove_dir_all(test_dir).is_ok() {
@@ -99,7 +101,7 @@ fn bench_metadata(c: &mut Criterion) {
 
     macro_rules! bench {
         ($mode:expr, $method: expr, $kind:expr) => {{
-            c.bench_function(
+            group.bench_function(
                 format!(
                     "{} {}() on {}",
                     stringify!($mode),
