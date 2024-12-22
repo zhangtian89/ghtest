@@ -63,7 +63,10 @@ jobs:
                 zip -r "../target/@artifacts/${item}.zip" "$item"
               fi
             done
+            
             cd ..
+            ARTIFACTS=$(find ./target/@artifacts/ -type f -printf "%p\n")
+            echo "FILES=$ARTIFACTS" >> $GITHUB_ENV
           fi
 
       - name: Upload artifacts
@@ -75,16 +78,9 @@ jobs:
           retention-days: 1
 
       - name: Upload Release Assets
-        if: steps.pack_result.outputs.need_upload == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.FILES }}
+          tag_name: ${{ env.RELEASE_TAG }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cd ./target/@artifacts/
-          for file in *; do
-            echo "Uploading $file"
-            curl -XPOST \
-              -H "Authorization: token $GITHUB_TOKEN" \
-              -H "Content-Type: $(file -b --mime-type $file)" \
-              --data-binary @$file \
-              "https://uploads.github.com/repos/${{ env.REPO_OWNER }}/${{ env.REPO_NAME }}/releases/tags/${{ env.RELEASE_TAG }}/assets?name=$(basename $file)"
-          done
