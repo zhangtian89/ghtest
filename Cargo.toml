@@ -14,6 +14,7 @@ salsa20 = { version = "0.10.2", features = ["std"] }
 blowfish = "0.9.1"
 sm4 = "0.5.1"
 camellia = "0.1.0"
+twofish = "0.7.1"
 
 [[bench]]
 name = "symmetric_encrypt"

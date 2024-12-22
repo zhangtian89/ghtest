@@ -229,6 +229,28 @@ fn bench_blowfish<M: Measurement>(group: &mut BenchmarkGroup<M>) {
     );
 }
 
+fn bench_twofish<M: Measurement>(group: &mut BenchmarkGroup<M>) {
+    use twofish::{
+        cipher::{BlockDecrypt, BlockEncrypt, KeyInit},
+        Twofish,
+    };
+
+    let key = gen_array::<32>();
+    let cipher: Twofish = Twofish::new((&key).into());
+    bench_chunk(
+        group,
+        "Twofish encrypt",
+        gen_vec,
+        encrypt_template!(@block, cipher, 32),
+    );
+    bench_chunk(
+        group,
+        "Twofish decrypt",
+        encrypt_init_template!(@block, cipher, 32),
+        decrypt_template!(@block, cipher, 32),
+    );
+}
+
 fn bench_salsa20<M: Measurement>(group: &mut BenchmarkGroup<M>) {
     use salsa20::cipher::{KeyIvInit, StreamCipher};
     use salsa20::Salsa20;
@@ -263,6 +285,7 @@ fn benching(c: &mut Criterion) {
         bench_blowfish,
         bench_camellia,
         bench_sm4,
+        bench_twofish,
     ];
     let mut group = c.benchmark_group("Symmetric Encrypt");
     for func in funcs {
