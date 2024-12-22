@@ -1,0 +1,56 @@
+name: Run Benchmark
+
+on:
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - uses: actions/checkout@v4
+
+      - name: Run benchmark script
+        shell: bash
+        run: |
+          mkdir -p ./upload
+          export CURRENT_OS="${{ matrix.os }}"
+          chmod +x ./run.sh
+          bash run.sh
+
+      - name: Package results
+        shell: bash
+        id: pack_result
+        run: |
+          if [ -z "$(ls -A ./upload 2>> /dev/null)" ]; then
+            echo "need_upload=false" >> $GITHUB_OUTPUT
+            echo "Upload directory is empty."
+          else
+            echo "need_upload=true" >> $GITHUB_OUTPUT
+
+            mkdir -p ./target/@artifacts/
+
+            cd ./upload
+            for item in *; do
+              if [ -d "$item" ] || [ -f "$item" ]; then
+                zip -r "../target/@artifacts/${item}.zip" "$item"
+              fi
+            done
+            cd ..
+          fi
+
+      - name: Upload artifacts
+        if: steps.pack_result.outputs.need_upload == 'true'
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmark result
+          path: ./target/@artifacts/*.zip
+          retention-days: 1
