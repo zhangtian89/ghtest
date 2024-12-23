@@ -2,11 +2,12 @@
 set -e
 
 mkdir -p "./target"
+        BRANCH="$(echo "$(git branch --show-current)" | sed 's/[]:<>|?"*+\/\\[]/_/g')"
 if [[ "$REUSE_RESULT" == "off" ]]; then 
+    ACHIEVE_NAME="criterion-result-${CURRENT_OS}-${BRANCH}-$(date '+%s')"
     echo Result download disabled
 else
     if [[ "$REUSE_RESULT" == "per_branch" ]]; then
-        BRANCH="$(echo "$(git branch --show-current)" | sed 's/[]:<>|?"*+\/\\[]/_/g')"
         ACHIEVE_NAME="criterion-result-${CURRENT_OS}-${BRANCH}"
     elif [[ "$REUSE_RESULT" == "per_os" ]]; then
         ACHIEVE_NAME="criterion-result-${CURRENT_OS}"
@@ -35,8 +36,6 @@ fi
 
 cargo bench || exit 1
 
-if [[ "$REUSE_RESULT" != "off" ]]; then 
-    if ! [ -z "$(ls -A ./target/criterion 2>> /dev/null)" ]; then
-        mv ./target/criterion ./target/upload/$ACHIEVE_NAME
-    fi
+if ! [ -z "$(ls -A ./target/criterion 2>> /dev/null)" ]; then
+    mv ./target/criterion ./target/upload/$ACHIEVE_NAME
 fi
