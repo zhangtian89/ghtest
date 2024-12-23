@@ -19,25 +19,25 @@ macro_rules! try_duration {
 }
 
 macro_rules! benching {
-    ($group: expr, $make: expr, $name:expr $(,)?) => {
+    ($group: expr, $make: expr, $name:tt $(,)?) => {
         $group.bench_function(
-            stringify!($name),
+            ($name),
             |b| {
                 b.iter(|| $make)
             },
         );
     };
-    ($(@inner,)? $group: expr, $make: expr, $name:expr, $func: ident $(,)?) => {
+    ($(@inner,)? $group: expr, $make: expr, $name:tt, $func: ident $(,)?) => {
         $group.bench_function(
-            format!("{}::{}", stringify!($name), stringify!($func_name)),
+            format!("{}::{}", ($name), stringify!($func)),
             |b| {
                 b.iter(|| $make.$func())
             },
         );
     };
-    ($(@inner,)? $group: expr, $make: expr, $name:expr, with $v:ident => $func: expr => $func_name: expr $(,)?) => {
+    ($(@inner,)? $group: expr, $make: expr, $name:tt, with $v:ident => $func: expr => $func_name: tt $(,)?) => {
         $group.bench_function(
-            format!("{}::{}", stringify!($name), stringify!($func_name)),
+            format!("{}::{}", ($name), ($func_name)),
             |b| {
                 b.iter(|| {
                     let $v = $make;
@@ -46,11 +46,11 @@ macro_rules! benching {
             },
         );
     };
-    ($(@inner,)? $group: expr, $make: expr, $name:expr, with $v:ident => $func: expr => $func_name: expr , $($etc: tt)+) => {
+    ($(@inner,)? $group: expr, $make: expr, $name:tt, with $v:ident => $func: expr => $func_name: tt, $($etc: tt)+) => {
         benching!($group, $make, $name, with $v=> $func => $func_name);
         benching!(@inner, $group, $make, $name, $($etc)+);
     };
-    ($(@inner,)? $group: expr, $make: expr, $name:expr, $func: ident, $($etc: tt)+) => {
+    ($(@inner,)? $group: expr, $make: expr, $name:tt, $func: ident, $($etc: tt)+) => {
         benching!($group, $make, $name, $func);
         benching!(@inner, $group, $make, $name, $($etc)+);
     };
@@ -66,7 +66,7 @@ fn bench_duration(c: &mut Criterion) {
         benching!(
             &mut group,
             try_duration!(SystemTime::now().duration_since(UNIX_EPOCH)),
-            "",
+            "std::time::SystemTime",
             as_secs, as_millis, as_micros, as_nanos,
             as_secs_f32, as_secs_f64,
             with d => (d.as_secs(), d.subsec_millis()) => "(as_secs, subsec_millis)",
@@ -140,11 +140,11 @@ fn bench_timestamp(c: &mut Criterion) {
         &mut group,
         try_duration!(SystemTime::now().duration_since(UNIX_EPOCH)),
         "std::time::SystemTime",
-            as_secs, as_millis, as_micros, as_nanos,
-            as_secs_f32, as_secs_f64,
-            with d => (d.as_secs(), d.subsec_millis()) => "(as_secs, subsec_millis)",
-            with d => (d.as_secs(), d.subsec_micros()) => "(as_secs, subsec_micros)",
-            with d => (d.as_secs(), d.subsec_nanos()) => "(as_secs, subsec_nanos)",
+        as_secs, as_millis, as_micros, as_nanos,
+        as_secs_f32, as_secs_f64,
+        with d => (d.as_secs(), d.subsec_millis()) => "(as_secs, subsec_millis)",
+        with d => (d.as_secs(), d.subsec_micros()) => "(as_secs, subsec_micros)",
+        with d => (d.as_secs(), d.subsec_nanos()) => "(as_secs, subsec_nanos)",
     );
     benching!(
         &mut group,
