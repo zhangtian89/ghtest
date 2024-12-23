@@ -15,6 +15,7 @@ blowfish = "0.9.1"
 sm4 = "0.5.1"
 camellia = "0.1.0"
 twofish = "0.7.1"
+ring = { version = "0.17.8", features = ["std"] }
 
 [[bench]]
 name = "symmetric_encrypt"

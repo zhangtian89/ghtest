@@ -37,6 +37,12 @@ macro_rules! encrypt_init_template {
             data
         }
     };
+    (@raw, $data:ident, $x: expr) => {
+        |size| {
+            let mut $data = gen_vec(size);
+            $x
+        }
+    };
     (@block, $cipher:expr, $size:expr) => {
         |size| {
             let mut data = gen_vec(size);
@@ -109,6 +115,62 @@ fn bench_aes<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         encrypt_init_template!(cipher, nonce),
         decrypt_template!(cipher, nonce),
     );
+
+    use ring::aead::{
+        Aad, LessSafeKey, Nonce as RingNonce, OpeningKey, UnboundKey, AES_128_GCM, AES_256_GCM,
+    };
+
+    let nonce: [_; 12] = gen_array();
+    let key: [_; 16] = gen_array();
+    let key = black_box(LessSafeKey::new(
+        UnboundKey::new(&AES_128_GCM, &key).unwrap(),
+    ));
+    let aad = Aad::from(&ASSOCIATED);
+    bench_chunk(group, "Aes128Gcm ring encrypt", gen_vec, |mut x| {
+        let nonce = RingNonce::assume_unique_for_key(nonce);
+        key.seal_in_place_append_tag(nonce, aad, &mut x).unwrap();
+        x
+    });
+    bench_chunk(
+        group,
+        "Aes128Gcm ring decrypt",
+        encrypt_init_template!(@raw, x, {
+            let nonce = RingNonce::assume_unique_for_key(nonce);
+            key.seal_in_place_append_tag(nonce, aad, &mut x).unwrap();
+            x
+        }),
+        |mut x| {
+            let nonce = RingNonce::assume_unique_for_key(nonce);
+            key.open_in_place(nonce, aad, &mut x).unwrap();
+            x
+        },
+    );
+
+    let nonce: [_; 12] = gen_array();
+    let key: [_; 32] = gen_array();
+    let key = black_box(LessSafeKey::new(
+        UnboundKey::new(&AES_256_GCM, &key).unwrap(),
+    ));
+    let aad = Aad::from(&ASSOCIATED);
+    bench_chunk(group, "Aes256Gcm ring encrypt", gen_vec, |mut x| {
+        let nonce = RingNonce::assume_unique_for_key(nonce);
+        key.seal_in_place_append_tag(nonce, aad, &mut x).unwrap();
+        x
+    });
+    bench_chunk(
+        group,
+        "Aes256Gcm ring decrypt",
+        encrypt_init_template!(@raw, x, {
+            let nonce = RingNonce::assume_unique_for_key(nonce);
+            key.seal_in_place_append_tag(nonce, aad, &mut x).unwrap();
+            x
+        }),
+        |mut x| {
+            let nonce = RingNonce::assume_unique_for_key(nonce);
+            key.open_in_place(nonce, aad, &mut x).unwrap();
+            x
+        },
+    );
 }
 
 fn bench_chacha20poly1305<M: Measurement>(group: &mut BenchmarkGroup<M>) {
@@ -122,13 +184,13 @@ fn bench_chacha20poly1305<M: Measurement>(group: &mut BenchmarkGroup<M>) {
     let nonce = ChaCha20Poly1305::generate_nonce(&mut OsRng);
     bench_chunk(
         group,
-        "ChaCha20Poly1305 encrypt",
+        "ChaCha20Poly1305 rust-crypto encrypt",
         gen_vec,
         encrypt_template!(cipher, nonce),
     );
     bench_chunk(
         group,
-        "ChaCha20Poly1305 decrypt",
+        "ChaCha20Poly1305 rust-crypto decrypt",
         encrypt_init_template!(cipher, nonce),
         decrypt_template!(cipher, nonce),
     );
@@ -138,15 +200,42 @@ fn bench_chacha20poly1305<M: Measurement>(group: &mut BenchmarkGroup<M>) {
     let nonce = XChaCha20Poly1305::generate_nonce(&mut OsRng);
     bench_chunk(
         group,
-        "XChaCha20Poly1305 encrypt",
+        "XChaCha20Poly1305 rust-crypto encrypt",
         gen_vec,
         encrypt_template!(cipher, nonce),
     );
     bench_chunk(
         group,
-        "XChaCha20Poly1305 decrypt",
+        "XChaCha20Poly1305 rust-crypto decrypt",
         encrypt_init_template!(cipher, nonce),
         decrypt_template!(cipher, nonce),
+    );
+
+    use ring::aead::{Aad, LessSafeKey, Nonce, UnboundKey, CHACHA20_POLY1305};
+    let nonce: [_; 12] = gen_array();
+    let key: [_; 32] = gen_array();
+    let key = black_box(LessSafeKey::new(
+        UnboundKey::new(&CHACHA20_POLY1305, &key).unwrap(),
+    ));
+    let aad = Aad::from(&ASSOCIATED);
+    bench_chunk(group, "CHACHA20_POLY1305 ring encrypt", gen_vec, |mut x| {
+        let nonce = Nonce::assume_unique_for_key(nonce);
+        key.seal_in_place_append_tag(nonce, aad, &mut x);
+        x
+    });
+    bench_chunk(
+        group,
+        "CHACHA20_POLY1305 ring decrypt",
+        encrypt_init_template!(@raw, x, {
+            let nonce = Nonce::assume_unique_for_key(nonce);
+            key.seal_in_place_append_tag(nonce, aad, &mut x).unwrap();
+            x
+        }),
+        |mut x| {
+            let nonce = Nonce::assume_unique_for_key(nonce);
+            key.open_in_place(nonce, aad, &mut x).unwrap();
+            x
+        },
     );
 }
 
@@ -270,19 +359,25 @@ fn bench_xor<M: Measurement>(group: &mut BenchmarkGroup<M>) {
     use std::ops::BitXorAssign;
 
     let key: [_; 32] = gen_array();
-    bench_chunk(group, "xor", gen_vec, |mut x| {
+    bench_chunk(group, "xor 32B", gen_vec, |mut x| {
         x.iter_mut()
             .zip(key.iter().cycle())
             .for_each(|(x, k)| x.bitxor_assign(k));
+        x
+    });
+
+    let key = gen_array::<1>()[0];
+    bench_chunk(group, "xor 1B", gen_vec, |mut x| {
+        x.iter_mut().for_each(|x| x.bitxor_assign(key));
         x
     });
 }
 
 fn benching(c: &mut Criterion) {
     let funcs = [
-        bench_xor,
         bench_chacha20poly1305,
         bench_aes,
+        bench_xor,
         // bench_salsa20,
         // bench_twofish,
         // bench_blowfish,
