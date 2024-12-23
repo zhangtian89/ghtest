@@ -83,13 +83,13 @@ fn bench_aes<M: Measurement>(group: &mut BenchmarkGroup<M>) {
     let cipher = Aes128Gcm::new(key);
     bench_chunk(
         group,
-        "Aes128Gcm encrypt_in_place",
+        "Aes128Gcm rust-crypto encrypt",
         gen_vec,
         encrypt_template!(cipher, nonce),
     );
     bench_chunk(
         group,
-        "Aes128Gcm decrypt_in_place",
+        "Aes128Gcm rust-crypto decrypt",
         encrypt_init_template!(cipher, nonce),
         decrypt_template!(cipher, nonce),
     );
@@ -99,13 +99,13 @@ fn bench_aes<M: Measurement>(group: &mut BenchmarkGroup<M>) {
     let cipher = Aes256Gcm::new(key);
     bench_chunk(
         group,
-        "Aes256Gcm encrypt_in_place",
+        "Aes256Gcm rust-crypto encrypt",
         gen_vec,
         encrypt_template!(cipher, nonce),
     );
     bench_chunk(
         group,
-        "Aes256Gcm decrypt_in_place",
+        "Aes256Gcm rust-crypto decrypt",
         encrypt_init_template!(cipher, nonce),
         decrypt_template!(cipher, nonce),
     );
@@ -122,13 +122,13 @@ fn bench_chacha20poly1305<M: Measurement>(group: &mut BenchmarkGroup<M>) {
     let nonce = ChaCha20Poly1305::generate_nonce(&mut OsRng);
     bench_chunk(
         group,
-        "ChaCha20Poly1305 encrypt_in_place",
+        "ChaCha20Poly1305 encrypt",
         gen_vec,
         encrypt_template!(cipher, nonce),
     );
     bench_chunk(
         group,
-        "ChaCha20Poly1305 decrypt_in_place",
+        "ChaCha20Poly1305 decrypt",
         encrypt_init_template!(cipher, nonce),
         decrypt_template!(cipher, nonce),
     );
@@ -138,13 +138,13 @@ fn bench_chacha20poly1305<M: Measurement>(group: &mut BenchmarkGroup<M>) {
     let nonce = XChaCha20Poly1305::generate_nonce(&mut OsRng);
     bench_chunk(
         group,
-        "XChaCha20Poly1305 encrypt_in_place",
+        "XChaCha20Poly1305 encrypt",
         gen_vec,
         encrypt_template!(cipher, nonce),
     );
     bench_chunk(
         group,
-        "XChaCha20Poly1305 decrypt_in_place",
+        "XChaCha20Poly1305 decrypt",
         encrypt_init_template!(cipher, nonce),
         decrypt_template!(cipher, nonce),
     );
