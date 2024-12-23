@@ -102,20 +102,20 @@ fn bench_duration(c: &mut Criterion) {
             num_nanoseconds,
             with d => (d.num_seconds(), d.subsec_nanos()) => "(num_seconds, subsec_nanos)",
         );
-        benching!(
-            &mut group,
-            local.signed_duration_since(Local::now()),
-            "chrono::Local",
-            num_weeks,
-            num_days,
-            num_hours,
-            num_minutes,
-            num_seconds,
-            num_milliseconds,
-            num_microseconds,
-            num_nanoseconds,
-            with d => (d.num_seconds(), d.subsec_nanos()) => "(num_seconds, subsec_nanos)",
-        );
+        // benching!(
+        //     &mut group,
+        //     local.signed_duration_since(Local::now()),
+        //     "chrono::Local",
+        //     num_weeks,
+        //     num_days,
+        //     num_hours,
+        //     num_minutes,
+        //     num_seconds,
+        //     num_milliseconds,
+        //     num_microseconds,
+        //     num_nanoseconds,
+        //     with d => (d.num_seconds(), d.subsec_nanos()) => "(num_seconds, subsec_nanos)",
+        // );
         group.finish();
     }
 }
@@ -127,7 +127,7 @@ fn bench_create(c: &mut Criterion) {
     benching!(&mut group, SystemTime::now(), "std::time::SystemTime",);
     benching!(&mut group, Instant::now(), "std::time::Instant",);
     benching!(&mut group, Utc::now(), "chrono::Utc",);
-    benching!(&mut group, Local::now(), "chrono::Local",);
+    // benching!(&mut group, Local::now(), "chrono::Local",);
 
     group.finish();
 }
@@ -155,15 +155,15 @@ fn bench_timestamp(c: &mut Criterion) {
         timestamp_micros,
         timestamp_nanos_opt
     );
-    benching!(
-        &mut group,
-        Local::now(),
-        "chrono::Local",
-        timestamp,
-        timestamp_millis,
-        timestamp_micros,
-        timestamp_nanos_opt
-    );
+    // benching!(
+    //     &mut group,
+    //     Local::now(),
+    //     "chrono::Local",
+    //     timestamp,
+    //     timestamp_millis,
+    //     timestamp_micros,
+    //     timestamp_nanos_opt
+    // );
 
     group.finish();
 }
