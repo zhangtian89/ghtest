@@ -3,6 +3,28 @@
 pub use criterion::{black_box, criterion_group, criterion_main, Criterion};
 pub use ghtest::*;
 
+#[macro_export]
+macro_rules! benching {
+    ($c:expr, $x:expr $(,)?) => {
+        benching!($c, stringify!($x), $x)
+    };
+    ($c:expr, $name: expr, $x:expr $(,)?) => {
+        $c.bench_function($name, |b| b.iter(|| black_box($x)))
+    };
+    ($c:expr, $name: expr, $setup: expr, $var: pat => $x:expr $(,)?) => {
+        benching!($c, $name, $setup, $var => $x, ::criterion::BatchSize::SmallInput)
+    };
+    ($c:expr, $name: expr, $setup: expr, $var: pat => $x:expr, $kind: expr $(,)?) => {
+        $c.bench_function($name, |b| {
+            b.iter_batched(
+                || $setup,
+                |$var| black_box($x),
+                $kind,
+            )
+        })
+    };
+}
+
 pub mod bench_chunk_util {
     use super::*;
 
@@ -27,17 +49,16 @@ pub mod bench_chunk_util {
         let sizes = get_sizes();
         for size in sizes {
             let data = init(1 << size);
-            group.bench_function(format!("{} (1 << {})", name, size), |b| {
-                b.iter_batched(
-                    || data.clone(),
-                    |data| {
-                        let data = black_box(data);
-                        let data = bench(data);
-                        black_box(data)
-                    },
-                    criterion::BatchSize::SmallInput,
-                )
-            });
+            benching!(
+                group,
+                format!("{} (1 << {})", name, size),
+                data.clone(),
+                data => {
+                    let data = black_box(data);
+                    let data = bench(data);
+                    black_box(data)
+                }
+            );
         }
     }
 }
