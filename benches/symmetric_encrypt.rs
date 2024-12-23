@@ -14,7 +14,7 @@ macro_rules! encrypt_template {
         }
     };
     (inner: $cipher:expr, $nonce:expr, $buf:expr) => {
-        $cipher.encrypt_in_place(&($nonce), ASSOCIATED, ($buf)).unwrap()
+        $cipher.encrypt_in_place(&($nonce), black_box(ASSOCIATED), ($buf)).unwrap()
     };
     (@block, $cipher:expr, $size:expr) => {
         |mut x| {
@@ -54,7 +54,7 @@ macro_rules! decrypt_template {
         }
     };
     (inner: $cipher:expr, $nonce:expr, $buf:expr) => {
-        $cipher.decrypt_in_place(&($nonce), ASSOCIATED, $buf).unwrap();
+        $cipher.decrypt_in_place(&($nonce), black_box(ASSOCIATED), $buf).unwrap();
     };
     (@block, $cipher:expr, $size:expr) => {
         |mut x| {
