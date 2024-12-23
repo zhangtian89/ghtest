@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 mod _utils;
 use _utils::{bench_chunk_util::bench_chunk, *};
 use criterion::{measurement::Measurement, BenchmarkGroup};
@@ -278,14 +280,14 @@ fn bench_xor<M: Measurement>(group: &mut BenchmarkGroup<M>) {
 
 fn benching(c: &mut Criterion) {
     let funcs = [
-        bench_twofish,
         bench_xor,
-        bench_salsa20,
         bench_chacha20poly1305,
         bench_aes,
-        bench_blowfish,
-        bench_camellia,
-        bench_sm4,
+        // bench_salsa20,
+        // bench_twofish,
+        // bench_blowfish,
+        // bench_camellia,
+        // bench_sm4,
     ];
     let mut group = c.benchmark_group("Symmetric Encrypt");
     for func in funcs {
