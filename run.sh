@@ -2,8 +2,6 @@
 set -e
 
 mkdir -p "./target"
-DOWNLOADED=true
-URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${RELEASE_TAG}/criterion-result-${CURRENT_OS}.zip"
 if [[ "$REUSE_RESULT" == "off" ]]; then 
     echo Result download disabled
 else
@@ -16,6 +14,8 @@ else
         echo Invalid REUSE_RESULT: $REUSE_RESULT
         exit 1
     fi
+    DOWNLOADED=true
+    URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${RELEASE_TAG}/$ACHIEVE_NAME.zip"
     echo Download last result from $URL
     curl -fL \
         -o "./target/$ACHIEVE_NAME.zip" \
@@ -37,6 +37,6 @@ cargo bench || exit 1
 
 if [[ "$REUSE_RESULT" != "off" ]]; then 
     if ! [ -z "$(ls -A ./target/criterion 2>> /dev/null)" ]; then
-        mv ./target/criterion ./upload/$ACHIEVE_NAME
+        mv ./target/criterion ./target/upload/$ACHIEVE_NAME
     fi
 fi
