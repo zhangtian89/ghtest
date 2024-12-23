@@ -167,12 +167,12 @@ fn benching(c: &mut Criterion) {
     let mut group = c.benchmark_group("Hash");
     let funcs = [
         bench_xor,
-        bench_whirlpool,
+        // bench_whirlpool,
         bench_sha2,
-        bench_sha3,
+        // bench_sha3,
         bench_hmac,
-        bench_sm3,
-        bench_blake2,
+        // bench_sm3,
+        // bench_blake2,
         bench_blake3,
         bench_blake2s_simd,
     ];
