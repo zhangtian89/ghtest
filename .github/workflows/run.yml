@@ -50,7 +50,7 @@ jobs:
           ACTION_INPUT: "${{ inputs.action_input }}"
           REUSE_RESULT: "${{ inputs.reuse_result }}"
         run: |
-          mkdir -p ./upload
+          mkdir -p ./target/upload
           chmod +x ./run.sh
           bash run.sh
 
@@ -58,7 +58,7 @@ jobs:
         shell: bash
         id: pack_result
         run: |
-          if [ -z "$(ls -A ./upload 2>> /dev/null)" ]; then
+          if [ -z "$(ls -A ./target/upload 2>> /dev/null)" ]; then
             echo "need_upload=false" >> $GITHUB_OUTPUT
             echo "Upload directory is empty."
           else
@@ -66,14 +66,12 @@ jobs:
 
             mkdir -p ./target/@artifacts/
 
-            cd ./upload
+            cd ./target/upload
             for item in *; do
-              if [ -d "$item" ] || [ -f "$item" ]; then
-                zip -r "../target/@artifacts/${item}.zip" "$item"
-              fi
+              zip -r "../@artifacts/${item}.zip" "$item"
             done
             
-            cd ..
+            cd ../..
             ARTIFACTS=$(find ./target/@artifacts/ -type f -printf "%p\n")
             echo "FILES=$ARTIFACTS" >> $GITHUB_ENV
           fi
