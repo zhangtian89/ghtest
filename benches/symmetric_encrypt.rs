@@ -93,12 +93,12 @@ fn bench_aes<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         gen_vec,
         encrypt_template!(cipher, nonce),
     );
-    bench_chunk(
-        group,
-        "Aes128Gcm rust-crypto decrypt",
-        encrypt_init_template!(cipher, nonce),
-        decrypt_template!(cipher, nonce),
-    );
+    // bench_chunk(
+    //     group,
+    //     "Aes128Gcm rust-crypto decrypt",
+    //     encrypt_init_template!(cipher, nonce),
+    //     decrypt_template!(cipher, nonce),
+    // );
 
     let key: [_; 32] = gen_array();
     let key = Key::<Aes256>::from_slice(&key);
@@ -109,12 +109,12 @@ fn bench_aes<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         gen_vec,
         encrypt_template!(cipher, nonce),
     );
-    bench_chunk(
-        group,
-        "Aes256Gcm rust-crypto decrypt",
-        encrypt_init_template!(cipher, nonce),
-        decrypt_template!(cipher, nonce),
-    );
+    // bench_chunk(
+    //     group,
+    //     "Aes256Gcm rust-crypto decrypt",
+    //     encrypt_init_template!(cipher, nonce),
+    //     decrypt_template!(cipher, nonce),
+    // );
 
     use ring::aead::{
         Aad, LessSafeKey, Nonce as RingNonce, OpeningKey, UnboundKey, AES_128_GCM, AES_256_GCM,
@@ -131,20 +131,20 @@ fn bench_aes<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         key.seal_in_place_append_tag(nonce, aad, &mut x).unwrap();
         x
     });
-    bench_chunk(
-        group,
-        "Aes128Gcm ring decrypt",
-        encrypt_init_template!(@raw, x, {
-            let nonce = RingNonce::assume_unique_for_key(nonce);
-            key.seal_in_place_append_tag(nonce, aad, &mut x).unwrap();
-            x
-        }),
-        |mut x| {
-            let nonce = RingNonce::assume_unique_for_key(nonce);
-            key.open_in_place(nonce, aad, &mut x).unwrap();
-            x
-        },
-    );
+    // bench_chunk(
+    //     group,
+    //     "Aes128Gcm ring decrypt",
+    //     encrypt_init_template!(@raw, x, {
+    //         let nonce = RingNonce::assume_unique_for_key(nonce);
+    //         key.seal_in_place_append_tag(nonce, aad, &mut x).unwrap();
+    //         x
+    //     }),
+    //     |mut x| {
+    //         let nonce = RingNonce::assume_unique_for_key(nonce);
+    //         key.open_in_place(nonce, aad, &mut x).unwrap();
+    //         x
+    //     },
+    // );
 
     let nonce: [_; 12] = gen_array();
     let key: [_; 32] = gen_array();
@@ -157,20 +157,20 @@ fn bench_aes<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         key.seal_in_place_append_tag(nonce, aad, &mut x).unwrap();
         x
     });
-    bench_chunk(
-        group,
-        "Aes256Gcm ring decrypt",
-        encrypt_init_template!(@raw, x, {
-            let nonce = RingNonce::assume_unique_for_key(nonce);
-            key.seal_in_place_append_tag(nonce, aad, &mut x).unwrap();
-            x
-        }),
-        |mut x| {
-            let nonce = RingNonce::assume_unique_for_key(nonce);
-            key.open_in_place(nonce, aad, &mut x).unwrap();
-            x
-        },
-    );
+    // bench_chunk(
+    //     group,
+    //     "Aes256Gcm ring decrypt",
+    //     encrypt_init_template!(@raw, x, {
+    //         let nonce = RingNonce::assume_unique_for_key(nonce);
+    //         key.seal_in_place_append_tag(nonce, aad, &mut x).unwrap();
+    //         x
+    //     }),
+    //     |mut x| {
+    //         let nonce = RingNonce::assume_unique_for_key(nonce);
+    //         key.open_in_place(nonce, aad, &mut x).unwrap();
+    //         x
+    //     },
+    // );
 }
 
 fn bench_chacha20poly1305<M: Measurement>(group: &mut BenchmarkGroup<M>) {
@@ -188,12 +188,12 @@ fn bench_chacha20poly1305<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         gen_vec,
         encrypt_template!(cipher, nonce),
     );
-    bench_chunk(
-        group,
-        "ChaCha20Poly1305 rust-crypto decrypt",
-        encrypt_init_template!(cipher, nonce),
-        decrypt_template!(cipher, nonce),
-    );
+    // bench_chunk(
+    //     group,
+    //     "ChaCha20Poly1305 rust-crypto decrypt",
+    //     encrypt_init_template!(cipher, nonce),
+    //     decrypt_template!(cipher, nonce),
+    // );
 
     let key = XChaCha20Poly1305::generate_key(&mut OsRng);
     let cipher = XChaCha20Poly1305::new(&key);
@@ -204,12 +204,12 @@ fn bench_chacha20poly1305<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         gen_vec,
         encrypt_template!(cipher, nonce),
     );
-    bench_chunk(
-        group,
-        "XChaCha20Poly1305 rust-crypto decrypt",
-        encrypt_init_template!(cipher, nonce),
-        decrypt_template!(cipher, nonce),
-    );
+    // bench_chunk(
+    //     group,
+    //     "XChaCha20Poly1305 rust-crypto decrypt",
+    //     encrypt_init_template!(cipher, nonce),
+    //     decrypt_template!(cipher, nonce),
+    // );
 
     use ring::aead::{Aad, LessSafeKey, Nonce, UnboundKey, CHACHA20_POLY1305};
     let nonce: [_; 12] = gen_array();
@@ -223,20 +223,20 @@ fn bench_chacha20poly1305<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         key.seal_in_place_append_tag(nonce, aad, &mut x);
         x
     });
-    bench_chunk(
-        group,
-        "CHACHA20_POLY1305 ring decrypt",
-        encrypt_init_template!(@raw, x, {
-            let nonce = Nonce::assume_unique_for_key(nonce);
-            key.seal_in_place_append_tag(nonce, aad, &mut x).unwrap();
-            x
-        }),
-        |mut x| {
-            let nonce = Nonce::assume_unique_for_key(nonce);
-            key.open_in_place(nonce, aad, &mut x).unwrap();
-            x
-        },
-    );
+    // bench_chunk(
+    //     group,
+    //     "CHACHA20_POLY1305 ring decrypt",
+    //     encrypt_init_template!(@raw, x, {
+    //         let nonce = Nonce::assume_unique_for_key(nonce);
+    //         key.seal_in_place_append_tag(nonce, aad, &mut x).unwrap();
+    //         x
+    //     }),
+    //     |mut x| {
+    //         let nonce = Nonce::assume_unique_for_key(nonce);
+    //         key.open_in_place(nonce, aad, &mut x).unwrap();
+    //         x
+    //     },
+    // );
 }
 
 fn bench_sm4<M: Measurement>(group: &mut BenchmarkGroup<M>) {
@@ -253,12 +253,12 @@ fn bench_sm4<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         gen_vec,
         encrypt_template!(@block, cipher, 16),
     );
-    bench_chunk(
-        group,
-        "Sm4 decrypt",
-        encrypt_init_template!(@block, cipher, 16),
-        decrypt_template!(@block, cipher, 16),
-    );
+    // bench_chunk(
+    //     group,
+    //     "Sm4 decrypt",
+    //     encrypt_init_template!(@block, cipher, 16),
+    //     decrypt_template!(@block, cipher, 16),
+    // );
 }
 
 fn bench_camellia<M: Measurement>(group: &mut BenchmarkGroup<M>) {
@@ -275,12 +275,12 @@ fn bench_camellia<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         gen_vec,
         encrypt_template!(@block, cipher, 16),
     );
-    bench_chunk(
-        group,
-        "Camellia128 decrypt",
-        encrypt_init_template!(@block, cipher, 16),
-        decrypt_template!(@block, cipher, 16),
-    );
+    // bench_chunk(
+    //     group,
+    //     "Camellia128 decrypt",
+    //     encrypt_init_template!(@block, cipher, 16),
+    //     decrypt_template!(@block, cipher, 16),
+    // );
 
     let key = gen_array::<32>();
     let cipher = Camellia256::new(&key.into());
@@ -290,12 +290,12 @@ fn bench_camellia<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         gen_vec,
         encrypt_template!(@block, cipher, 16),
     );
-    bench_chunk(
-        group,
-        "Camellia256 decrypt",
-        encrypt_init_template!(@block, cipher, 16),
-        decrypt_template!(@block, cipher, 16),
-    );
+    // bench_chunk(
+    //     group,
+    //     "Camellia256 decrypt",
+    //     encrypt_init_template!(@block, cipher, 16),
+    //     decrypt_template!(@block, cipher, 16),
+    // );
 }
 
 fn bench_blowfish<M: Measurement>(group: &mut BenchmarkGroup<M>) {
@@ -312,12 +312,12 @@ fn bench_blowfish<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         gen_vec,
         encrypt_template!(@block, cipher, 8),
     );
-    bench_chunk(
-        group,
-        "Blowfish decrypt",
-        encrypt_init_template!(@block, cipher, 8),
-        decrypt_template!(@block, cipher, 8),
-    );
+    // bench_chunk(
+    //     group,
+    //     "Blowfish decrypt",
+    //     encrypt_init_template!(@block, cipher, 8),
+    //     decrypt_template!(@block, cipher, 8),
+    // );
 }
 
 fn bench_twofish<M: Measurement>(group: &mut BenchmarkGroup<M>) {
@@ -334,12 +334,12 @@ fn bench_twofish<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         gen_vec,
         encrypt_template!(@block, cipher, 16),
     );
-    bench_chunk(
-        group,
-        "Twofish decrypt",
-        encrypt_init_template!(@block, cipher, 16),
-        decrypt_template!(@block, cipher, 16),
-    );
+    // bench_chunk(
+    //     group,
+    //     "Twofish decrypt",
+    //     encrypt_init_template!(@block, cipher, 16),
+    //     decrypt_template!(@block, cipher, 16),
+    // );
 }
 
 fn bench_salsa20<M: Measurement>(group: &mut BenchmarkGroup<M>) {
@@ -376,7 +376,7 @@ fn bench_xor<M: Measurement>(group: &mut BenchmarkGroup<M>) {
 
     let key = gen_array::<1>()[0];
     bench_chunk(group, "xor 1B", gen_vec, |mut x| {
-        x.iter_mut().for_each(|x| x.bitxor_assign(key));
+        x.iter_mut().for_each(|x| x.bitxor_assign(black_box(key)));
         x
     });
 }
