@@ -366,6 +366,14 @@ fn bench_xor<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         x
     });
 
+    let key: [_; 16] = gen_array();
+    bench_chunk(group, "xor 16B", gen_vec, |mut x| {
+        x.iter_mut()
+            .zip(key.iter().cycle())
+            .for_each(|(x, k)| x.bitxor_assign(k));
+        x
+    });
+
     let key = gen_array::<1>()[0];
     bench_chunk(group, "xor 1B", gen_vec, |mut x| {
         x.iter_mut().for_each(|x| x.bitxor_assign(key));
