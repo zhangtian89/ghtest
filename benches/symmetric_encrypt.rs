@@ -14,7 +14,7 @@ macro_rules! encrypt_template {
         }
     };
     (inner: $cipher:expr, $nonce:expr, $buf:expr) => {
-        $cipher.encrypt_in_place(&($nonce), black_box(ASSOCIATED), ($buf)).unwrap()
+        $cipher.encrypt_in_place(black_box(&($nonce)), black_box(ASSOCIATED), black_box($buf)).unwrap()
     };
     (@block, $cipher:expr, $size:expr) => {
         |mut x| {
@@ -23,8 +23,11 @@ macro_rules! encrypt_template {
         }
     };
     (@block, inner: $cipher:expr, $size:expr, $buf:expr) => {
-        for block in $buf.chunks_exact_mut($size) {
-            $cipher.encrypt_block(block.into());
+        {
+            let cipher = black_box($cipher);
+            for block in black_box($buf).chunks_exact_mut($size) {
+                cipher.encrypt_block(block.into());
+            }
         }
     };
 }
@@ -60,7 +63,7 @@ macro_rules! decrypt_template {
         }
     };
     (inner: $cipher:expr, $nonce:expr, $buf:expr) => {
-        $cipher.decrypt_in_place(&($nonce), black_box(ASSOCIATED), $buf).unwrap();
+        $cipher.decrypt_in_place(black_box(&($nonce)), black_box(ASSOCIATED), black_box($buf)).unwrap();
     };
     (@block, $cipher:expr, $size:expr) => {
         |mut x| {
@@ -69,8 +72,11 @@ macro_rules! decrypt_template {
         }
     };
     (@block, inner: $cipher:expr, $size:expr, $buf:expr) => {
-        for block in $buf.chunks_exact_mut($size) {
-            $cipher.decrypt_block(block.into());
+        {
+            let cipher = black_box($cipher);
+            for block in black_box($buf).chunks_exact_mut($size) {
+                $cipher.decrypt_block(block.into());
+            }
         }
     };
 }
@@ -251,13 +257,13 @@ fn bench_sm4<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         group,
         "Sm4 encrypt",
         gen_vec,
-        encrypt_template!(@block, cipher, 16),
+        encrypt_template!(@block, &cipher, 16),
     );
     // bench_chunk(
     //     group,
     //     "Sm4 decrypt",
-    //     encrypt_init_template!(@block, cipher, 16),
-    //     decrypt_template!(@block, cipher, 16),
+    //     encrypt_init_template!(@block, &cipher, 16),
+    //     decrypt_template!(@block, &cipher, 16),
     // );
 }
 
@@ -273,13 +279,13 @@ fn bench_camellia<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         group,
         "Camellia128 encrypt",
         gen_vec,
-        encrypt_template!(@block, cipher, 16),
+        encrypt_template!(@block, &cipher, 16),
     );
     // bench_chunk(
     //     group,
     //     "Camellia128 decrypt",
-    //     encrypt_init_template!(@block, cipher, 16),
-    //     decrypt_template!(@block, cipher, 16),
+    //     encrypt_init_template!(@block, &cipher, 16),
+    //     decrypt_template!(@block, &cipher, 16),
     // );
 
     let key = gen_array::<32>();
@@ -288,13 +294,13 @@ fn bench_camellia<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         group,
         "Camellia256 encrypt",
         gen_vec,
-        encrypt_template!(@block, cipher, 16),
+        encrypt_template!(@block, &cipher, 16),
     );
     // bench_chunk(
     //     group,
     //     "Camellia256 decrypt",
-    //     encrypt_init_template!(@block, cipher, 16),
-    //     decrypt_template!(@block, cipher, 16),
+    //     encrypt_init_template!(@block, &cipher, 16),
+    //     decrypt_template!(@block, &cipher, 16),
     // );
 }
 
@@ -310,13 +316,13 @@ fn bench_blowfish<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         group,
         "Blowfish encrypt",
         gen_vec,
-        encrypt_template!(@block, cipher, 8),
+        encrypt_template!(@block, &cipher, 8),
     );
     // bench_chunk(
     //     group,
     //     "Blowfish decrypt",
-    //     encrypt_init_template!(@block, cipher, 8),
-    //     decrypt_template!(@block, cipher, 8),
+    //     encrypt_init_template!(@block, &cipher, 8),
+    //     decrypt_template!(@block, &cipher, 8),
     // );
 }
 
@@ -332,13 +338,13 @@ fn bench_twofish<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         group,
         "Twofish encrypt",
         gen_vec,
-        encrypt_template!(@block, cipher, 16),
+        encrypt_template!(@block, &cipher, 16),
     );
     // bench_chunk(
     //     group,
     //     "Twofish decrypt",
-    //     encrypt_init_template!(@block, cipher, 16),
-    //     decrypt_template!(@block, cipher, 16),
+    //     encrypt_init_template!(@block, &cipher, 16),
+    //     decrypt_template!(@block, &cipher, 16),
     // );
 }
 
@@ -358,7 +364,7 @@ fn bench_salsa20<M: Measurement>(group: &mut BenchmarkGroup<M>) {
 fn bench_xor<M: Measurement>(group: &mut BenchmarkGroup<M>) {
     use std::ops::BitXorAssign;
 
-    let key: [_; 32] = gen_array();
+    let key: [_; 32] = black_box(gen_array());
     bench_chunk(group, "xor 32B", gen_vec, |mut x| {
         x.iter_mut()
             .zip(key.iter().cycle())
@@ -366,7 +372,7 @@ fn bench_xor<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         x
     });
 
-    let key: [_; 16] = gen_array();
+    let key: [_; 16] = black_box(gen_array());
     bench_chunk(group, "xor 16B", gen_vec, |mut x| {
         x.iter_mut()
             .zip(key.iter().cycle())
@@ -374,7 +380,7 @@ fn bench_xor<M: Measurement>(group: &mut BenchmarkGroup<M>) {
         x
     });
 
-    let key = gen_array::<1>()[0];
+    let key = black_box(gen_array::<1>()[0]);
     bench_chunk(group, "xor 1B", gen_vec, |mut x| {
         x.iter_mut().for_each(|x| x.bitxor_assign(black_box(key)));
         x
